@@ -1,6 +1,5 @@
 package coocoogame.com.coonotebook
 
-
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.application.ApplicationManager
@@ -10,14 +9,14 @@ import java.io.File
 import java.nio.file.Paths
 
 @Service
-class NoteStorageService {
-    private val logger = Logger.getInstance(NoteStorageService::class.java)
+class CategoryManager {
+    private val logger = Logger.getInstance(CategoryManager::class.java)
     private val mapper = jacksonObjectMapper()
     private val storageFile: File by lazy {
         val configPath = Paths.get(
             System.getProperty("user.home"),
             ".intellij-notebook",
-            "notes.json"
+            "categories.json"
         ).toFile()
 
         configPath.parentFile.mkdirs()
@@ -28,37 +27,28 @@ class NoteStorageService {
         configPath
     }
 
-    fun saveNotes(notes: List<Note>) {
+    fun saveCategories(categories: List<String>) {
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
-                mapper.writerWithDefaultPrettyPrinter().writeValue(storageFile, notes)
+                mapper.writerWithDefaultPrettyPrinter().writeValue(storageFile, categories)
             } catch (e: Exception) {
-                logger.error("Failed to save notes", e)
+                logger.error("Failed to save categories", e)
             }
         }
     }
 
-    fun loadNotes(): List<Note> {
+    fun loadCategories(): List<String> {
         return try {
             mapper.readValue(storageFile)
         } catch (e: Exception) {
-            logger.error("Failed to load notes", e)
+            logger.error("Failed to load categories", e)
             emptyList()
         }
     }
 
-    fun getNotesByCategory(category: String?): List<Note> {
-        val allNotes = loadNotes()
-        return if (category != null) {
-            allNotes.filter { it.category == category }
-        } else {
-            allNotes
-        }
-    }
-
     companion object {
-        fun getInstance(): NoteStorageService {
-            return ApplicationManager.getApplication().getService(NoteStorageService::class.java)
+        fun getInstance(): CategoryManager {
+            return ApplicationManager.getApplication().getService(CategoryManager::class.java)
         }
     }
 }

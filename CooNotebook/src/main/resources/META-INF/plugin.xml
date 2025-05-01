@@ -36,5 +36,10 @@
                 text="Export Notes to JSON" description="Export all notes to a JSON file">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
+
+        <action id="Notebook.ManageCategories" class="coocoogame.com.coonotebook.ManageCategoriesAction"
+                text="Manage Categories" description="Manage note categories">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
     </actions>
 </idea-plugin>

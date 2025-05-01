@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "coocoogame.com"
-version = "1.8-SNAPSHOT"
+version = "2.2-SNAPSHOT"
 
 repositories {
     mavenCentral()
