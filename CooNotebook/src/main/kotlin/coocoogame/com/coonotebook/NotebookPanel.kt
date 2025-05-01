@@ -4,7 +4,6 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.EditorFactory
-import com.intellij.openapi.editor.EditorSettings
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
@@ -22,14 +21,14 @@ import java.awt.Container
 import java.awt.Window
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
-import java.util.*
 import javax.swing.*
 import javax.swing.table.AbstractTableModel
 
 
 class NotebookPanel(private val project: Project) : SimpleToolWindowPanel(true, true) {
     private var currentFilterCategory: String? = null
-    private val noteList = mutableListOf<Note>()
+    private val noteListAll = mutableListOf<Note>()
+    private val noteListCurrent = mutableListOf<Note>()
     private val tableModel = NoteTableModel()
     private val table = JBTable(tableModel)
     // 获取 C# 文件类型
@@ -159,8 +158,8 @@ var comboBox= ComboBox<String>().apply {
             allNotes
         }
 
-        noteList.clear()
-        noteList.addAll(filteredNotes)
+        noteListCurrent.clear()
+        noteListCurrent.addAll(filteredNotes)
         tableModel.fireTableDataChanged()
 
         // 更新状态显示
@@ -227,7 +226,7 @@ var comboBox= ComboBox<String>().apply {
     }
 
     private fun loadData() {
-        noteList.addAll(NoteStorageService.getInstance().loadNotes())
+        noteListAll.addAll(NoteStorageService.getInstance().loadNotes())
         tableModel.fireTableDataChanged()
         categoryListModel.addAll(0,CategoryManager.getInstance().loadCategories())
     }
@@ -243,7 +242,7 @@ var comboBox= ComboBox<String>().apply {
     private fun showSelectedNoteContent() {
         val selectedRow = table.selectedRow
         if (selectedRow >= 0) {
-            currentSelectedNote = noteList[selectedRow]
+            currentSelectedNote = noteListCurrent[selectedRow]
             contentTextArea.text = currentSelectedNote?.content ?: ""
             contentTextArea.isEnabled = true
             saveButton.isEnabled = true
@@ -257,7 +256,7 @@ var comboBox= ComboBox<String>().apply {
 
     private fun saveCurrentNote() {
         currentSelectedNote?.let { note ->
-            val selectedRow = noteList.indexOf(note)
+            val selectedRow = noteListCurrent.indexOf(note)
             if (selectedRow >= 0) {
                 note.content = contentTextArea.text
                 note.updatedAt = System.currentTimeMillis()
@@ -274,21 +273,21 @@ var comboBox= ComboBox<String>().apply {
         val dialog = NoteEditorDialog(project, null, categories)
         if (dialog.showAndGet()) {
             val newNote = dialog.getNote()
-            noteList.add(newNote)
+            noteListAll.add(newNote)
             tableModel.fireTableDataChanged()
             saveNotes()
-            table.selectionModel.setSelectionInterval(noteList.size - 1, noteList.size - 1)
+            table.selectionModel.setSelectionInterval(noteListAll.size - 1, noteListAll.size - 1)
         }
     }
     private fun editNote() {
         val selectedRow = table.selectedRow
         if (selectedRow >= 0) {
-            val noteToEdit = noteList[selectedRow]
+            val noteToEdit = noteListAll[selectedRow]
             // 传入当前分类列表
             val dialog = NoteEditorDialog(project, noteToEdit, categoryListModel.items)
             if (dialog.showAndGet()) {
                 val updatedNote = dialog.getNote()
-                noteList[selectedRow] = updatedNote
+                noteListAll[selectedRow] = updatedNote
                 tableModel.fireTableRowsUpdated(selectedRow, selectedRow)
                 saveNotes()
             }
@@ -298,7 +297,7 @@ var comboBox= ComboBox<String>().apply {
     private fun removeNote() {
         val selectedRow = table.selectedRow
         if (selectedRow >= 0) {
-            noteList.removeAt(selectedRow)
+            noteListAll.removeAt(selectedRow)
             tableModel.fireTableDataChanged()
             saveNotes()
             showSelectedNoteContent()
@@ -306,7 +305,7 @@ var comboBox= ComboBox<String>().apply {
     }
 
     private fun saveNotes() {
-        NoteStorageService.getInstance().saveNotes(noteList)
+        NoteStorageService.getInstance().saveNotes(noteListAll)
     }
 
     private fun addCategory() {
@@ -400,14 +399,14 @@ var comboBox= ComboBox<String>().apply {
     private inner class NoteTableModel : AbstractTableModel() {
         private val columnNames = arrayOf("Title", "Category")// arrayOf("Title", "Category", "Last Updated")
 
-        override fun getRowCount() = noteList.size
+        override fun getRowCount() = noteListCurrent.size
         override fun getColumnCount() = columnNames.size
         override fun getColumnName(column: Int) = columnNames[column]
 
         override fun getValueAt(row: Int, column: Int): Any {
             return when (column) {
-                0 -> noteList[row].title
-                1 -> noteList[row].category ?: "Uncategorized"
+                0 -> noteListCurrent[row].title
+                1 -> noteListCurrent[row].category ?: "Uncategorized"
                // 2 -> Date(noteList[row].updatedAt).toString()
                 else -> ""
             }

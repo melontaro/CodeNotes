@@ -26,7 +26,7 @@ class NoteEditorDialog(
         project,
         csharpFileType,
         false,
-        true
+        false
 
     );
 
